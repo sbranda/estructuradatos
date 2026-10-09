@@ -1,0 +1,16 @@
+{
+  "name": "Ejemplos de validación",
+  "short_name": "Validaciones",
+  "description": "Seis ejemplos animados de validación de datos: división por 0, precio, nota, nombre, número y mail.",
+  "lang": "es",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
