@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ejemplo 1 · División por 0</title>
+<style>
+  :root { --bg:#0f172a; --card:#1e293b; --txt:#e2e8f0; --mut:#94a3b8; --ok:#34d399; --err:#f87171; --acc:#60a5fa; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--txt); font-family:system-ui,sans-serif; padding:16px; }
+  .card { width:100%; max-width:520px; background:var(--card); border-radius:16px; padding:24px; box-shadow:0 10px 40px #0006; }
+  h1 { font-size:1.2rem; margin:0 0 16px; }
+  .step { opacity:.35; pointer-events:none; transition:opacity .5s, transform .5s; transform:translateY(8px); margin-bottom:16px; }
+  .step.active { opacity:1; pointer-events:auto; transform:none; }
+  .step.done { opacity:.7; transform:none; }
+  label { display:block; font-size:.85rem; color:var(--mut); margin-bottom:6px; }
+  input { width:100%; font-size:1.5rem; padding:10px 14px; border-radius:10px; border:2px solid #334155; background:#0f172a; color:var(--txt); outline:none; transition:border-color .2s; }
+  input:focus { border-color:var(--acc); }
+  input.error { border-color:var(--err); animation:shake .4s; }
+  input.valid { border-color:var(--ok); }
+  @keyframes shake { 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+  .msg { min-height:1.2em; font-size:.85rem; margin-top:6px; color:var(--mut); transition:color .2s; }
+  .msg.error { color:var(--err); }
+  button { width:100%; margin-top:10px; padding:12px; font-size:1rem; border:0; border-radius:10px; background:var(--acc); color:#0f172a; font-weight:700; cursor:pointer; transition:transform .1s, opacity .2s; }
+  button:active { transform:scale(.97); }
+  button:disabled { opacity:.35; cursor:not-allowed; }
+  #pizarra { font-family:ui-monospace,Consolas,monospace; font-size:1.3rem; line-height:1.6; background:#0f172a; border-radius:10px; padding:16px; min-height:140px; overflow-x:auto; white-space:pre; }
+  .linea { opacity:0; transform:translateY(-6px); animation:aparece .5s forwards; }
+  @keyframes aparece { to { opacity:1; transform:none; } }
+  .q { color:var(--ok); font-weight:700; }
+  .r { color:var(--acc); }
+  .resultado { margin-top:4px; font-size:1.8rem; text-align:center; opacity:0; transition:opacity .6s; }
+  .resultado.show { opacity:1; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>➗ Ejemplo 1 · División por 0</h1>
+
+  <div class="step active" id="s1">
+    <label for="a">Ingrese el primer número</label>
+    <input id="a" inputmode="numeric" autocomplete="off" placeholder="Ej: 1234">
+    <div class="msg" id="m1"></div>
+    <button id="b1" disabled>Continuar</button>
+  </div>
+
+  <div class="step" id="s2">
+    <label for="b">Ingrese el segundo número</label>
+    <input id="b" inputmode="numeric" autocomplete="off" placeholder="Ej: 7" disabled>
+    <div class="msg" id="m2"></div>
+    <button id="b2" disabled>Dividir</button>
+  </div>
+
+  <div class="step" id="s3">
+    <div class="resultado" id="res"></div>
+    <button id="reset">Nueva división</button>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const a = $('a'), b = $('b'), m1 = $('m1'), m2 = $('m2');
+const b1 = $('b1'), b2 = $('b2');
+const patron = /^-?\d*$/;
+
+function setStep(n) {
+  [1, 2, 3].forEach(i => {
+    const s = $('s' + i);
+    s.classList.toggle('active', i === n);
+    s.classList.toggle('done', i < n);
+  });
+}
+
+function rechazar(input, msg, texto) {
+  input.classList.remove('error'); void input.offsetWidth; // reinicia animación
+  input.classList.add('error');
+  msg.textContent = texto; msg.className = 'msg error';
+  setTimeout(() => input.classList.remove('error'), 450);
+}
+
+// Filtra caracteres inválidos y, en el divisor, impide que el valor sea 0
+function filtrar(input, msg, esDivisor) {
+  let prev = input.dataset.prev || '';
+  input.addEventListener('input', () => {
+    let v = input.value;
+    if (!patron.test(v)) {
+      input.value = prev;
+      return rechazar(input, msg, 'Solo se permiten números enteros.');
+    }
+    if (esDivisor && v !== '' && v !== '-' && Number(v) === 0) {
+      input.value = prev === '0' ? '' : prev;
+      prev = input.value;
+      b2.disabled = true;
+      return rechazar(input, msg, '🚫 No se puede dividir por cero');
+    }
+    prev = v; input.dataset.prev = v;
+    msg.textContent = ''; msg.className = 'msg';
+    const ok = v !== '' && v !== '-';
+    input.classList.toggle('valid', ok);
+    (esDivisor ? b2 : b1).disabled = !ok;
+  });
+}
+filtrar(a, m1, false);
+filtrar(b, m2, true);
+
+b1.onclick = () => {
+  setStep(2);
+  b.disabled = false; a.disabled = true; b.focus();
+};
+a.addEventListener('keydown', e => { if (e.key === 'Enter' && !b1.disabled) b1.click(); });
+b.addEventListener('keydown', e => { if (e.key === 'Enter' && !b2.disabled) b2.click(); });
+
+b2.onclick = async () => {
+  const A = parseInt(a.value, 10), B = parseInt(b.value, 10);
+  if (B === 0) return rechazar(b, m2, '🚫 No se puede dividir por cero'); // doble seguridad
+  b.disabled = true; b2.disabled = true;
+  setStep(3);
+  await dividirAnimado(A, B);
+};
+
+// Formato argentino; muy chico o muy grande -> notación científica (nunca muestra 0 si no es 0)
+function formatear(r) {
+  if (r === 0) return '0';
+  const abs = Math.abs(r);
+  if (abs < 0.000001 || abs >= 1e15) {
+    const [m, e] = r.toExponential(4).split('e');
+    const mant = parseFloat(m).toLocaleString('es-AR', { maximumFractionDigits: 4 });
+    return mant + ' × 10<sup>' + parseInt(e, 10) + '</sup>';
+  }
+  return r.toLocaleString('es-AR', { maximumFractionDigits: 6 });
+}
+
+async function dividirAnimado(A, B) {
+  const res = $('res');
+  res.classList.remove('show');
+  const r = A / B;
+  const txt = formatear(r);
+  res.innerHTML = `${A} ÷ ${B} = <b class="q">${txt}</b>`;
+  await sleep(50);
+  res.classList.add('show');
+}
+
+$('reset').onclick = () => {
+  [a, b].forEach(i => { i.value = ''; i.dataset.prev = ''; i.classList.remove('valid', 'error'); });
+  a.disabled = false; b.disabled = true; b1.disabled = true; b2.disabled = true;
+  m1.textContent = m2.textContent = '';
+  setStep(1); a.focus();
+};
+</script>
+</body>
+</html>

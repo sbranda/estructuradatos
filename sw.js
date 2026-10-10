@@ -1,6 +1,6 @@
 // Service worker: cache-first del "app shell" para uso sin conexión.
 // Al cambiar cualquier archivo, subí el número de VERSION para renovar la caché.
-const VERSION = 'v1';
+const VERSION = 'v3';
 const CACHE = 'validaciones-' + VERSION;
 const ARCHIVOS = [
   './',
